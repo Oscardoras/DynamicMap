@@ -58,7 +58,7 @@ public class DynamicMapPlugin extends BukkitPlugin implements Listener {
 		new Thread(() -> {
 			while (Thread.currentThread().isAlive()) {
 				try {
-					Thread.sleep(20l * ticks);
+					Thread.sleep(50l * ticks);
 					ChunkRenderer.run();
 				} catch (Exception e) {
 					e.printStackTrace();
@@ -85,23 +85,21 @@ public class DynamicMapPlugin extends BukkitPlugin implements Listener {
 		
 		
 		Bukkit.getScheduler().scheduleSyncRepeatingTask(this, () -> {
-			try {
-				Iterator<Recipe> recipes = Bukkit.recipeIterator();
-				while (recipes.hasNext()) {
-					ItemStack item = recipes.next().getResult();
-					if (item.getType() == Material.FILLED_MAP && ((MapMeta) item.getItemMeta()).getMapView().equals(map)) return;
-				}
-				ItemStack result = new ItemStack(Material.FILLED_MAP);
-				MapMeta meta = (MapMeta) result.getItemMeta();
-				meta.setMapView(map);
-				result.setItemMeta(meta);
-				
-				ShapedRecipe recipe = new ShapedRecipe(new NamespacedKey(this, "dynamicmap"), result);
-				recipe.shape("XXX", "X#X", "XXX");
-				recipe.setIngredient('X', Material.PAPER);
-				recipe.setIngredient('#', Material.ENDER_EYE);
-				Bukkit.addRecipe(recipe);
-			} catch (Exception e) {}
+			Iterator<Recipe> recipes = Bukkit.recipeIterator();
+			while (recipes.hasNext()) {
+				ItemStack item = recipes.next().getResult();
+				if (item.getType() == Material.FILLED_MAP && ((MapMeta) item.getItemMeta()).getMapView().equals(map)) return;
+			}
+			ItemStack result = new ItemStack(Material.FILLED_MAP);
+			MapMeta meta = (MapMeta) result.getItemMeta();
+			meta.setMapView(map);
+			result.setItemMeta(meta);
+			
+			ShapedRecipe recipe = new ShapedRecipe(new NamespacedKey(this, "dynamicmap"), result);
+			recipe.shape("XXX", "X#X", "XXX");
+			recipe.setIngredient('X', Material.PAPER);
+			recipe.setIngredient('#', Material.ENDER_EYE);
+			Bukkit.addRecipe(recipe);
 		}, 0L, 20L);
 		
 		

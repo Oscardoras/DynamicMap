@@ -1,8 +1,6 @@
 package org.bukkitplugin.dynamicmap;
 
-import java.awt.Color;
 import java.awt.Image;
-import java.awt.image.BufferedImage;
 
 import org.bukkit.Location;
 import org.bukkit.entity.Player;
@@ -36,11 +34,6 @@ public class Renderer extends MapRenderer {
 			MapChunk chunk2 = chunk;
 			for (int x; (x = zoom.getX(location, chunk2)) < 128; chunk2 = chunk2.getEast()) {
 				Image render = ChunkRenderer.getChunkRender(chunk2);
-				if (render == null) {
-					render = new BufferedImage(16, 16, BufferedImage.TYPE_INT_ARGB);
-					render.getGraphics().setColor(new Color(0, 0, 0, 0));
-				}
-				
 				canvas.drawImage(x, y, render.getScaledInstance(chunkLength, chunkLength, java.awt.Image.SCALE_DEFAULT));
 			}
 		}

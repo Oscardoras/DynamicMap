@@ -7,11 +7,9 @@ import java.awt.image.BufferedImage;
 import java.io.File;
 import java.io.IOException;
 import java.lang.ref.SoftReference;
-import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
-import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
@@ -23,23 +21,23 @@ import org.bukkit.block.Block;
 
 public final class ChunkRenderer {
 	
-	private static final Map<Integer, Set<MapChunk>> mapChunksToRender = new HashMap<Integer, Set<MapChunk>>();
-	private static final List<MapCache> chunkCache = new ArrayList<MapCache>();
+	private static final Map<Integer, Set<MapChunk>> toRender = new HashMap<Integer, Set<MapChunk>>();
+	private static final Map<MapChunk, SoftReference<Image>> cache = new HashMap<MapChunk, SoftReference<Image>>();
 	public static final Map<String, Color> colorCache = new HashMap<String, Color>();
 	
 	static {
-		mapChunksToRender.put(1, new HashSet<MapChunk>());
-		mapChunksToRender.put(2, new HashSet<MapChunk>());
-		mapChunksToRender.put(4, new HashSet<MapChunk>());
-		mapChunksToRender.put(8, new HashSet<MapChunk>());
-		mapChunksToRender.put(16, new HashSet<MapChunk>());
+		toRender.put(1, new HashSet<MapChunk>());
+		toRender.put(2, new HashSet<MapChunk>());
+		toRender.put(4, new HashSet<MapChunk>());
+		toRender.put(8, new HashSet<MapChunk>());
+		toRender.put(16, new HashSet<MapChunk>());
 	}
 	
 	public static void run() {
 		for (int size : new Integer[] {1, 2, 4, 8, 16}) {
 			MapChunk chunk = null;
-			synchronized(mapChunksToRender) {
-				Set<MapChunk> mapChunks = mapChunksToRender.get(size);
+			synchronized(toRender) {
+				Set<MapChunk> mapChunks = toRender.get(size);
 				Iterator<MapChunk> it = mapChunks.iterator();
 				if (it.hasNext()) {
 					chunk = it.next();
@@ -51,11 +49,6 @@ public final class ChunkRenderer {
 				else renderOver(chunk);
 				break;
 			}
-		}
-		
-		synchronized(chunkCache) {
-    		Iterator<MapCache> it = chunkCache.iterator();
-    		while (it.hasNext()) if (it.next().get() == null) it.remove();
 		}
 	}
 	
@@ -95,10 +88,10 @@ public final class ChunkRenderer {
 		Graphics2D gra = img.createGraphics();
 		
 		MapChunk[] children = chunk.getChildren();
-		gra.drawImage(getImage(children[0]), 0, 0, null);
-		gra.drawImage(getImage(children[1]), 0, 16, null);
-		gra.drawImage(getImage(children[2]), 16, 0, null);
-		gra.drawImage(getImage(children[3]), 16, 16, null);
+		gra.drawImage(getChunkRender(children[0]), 0, 0, null);
+		gra.drawImage(getChunkRender(children[1]), 0, 16, null);
+		gra.drawImage(getChunkRender(children[2]), 16, 0, null);
+		gra.drawImage(getChunkRender(children[3]), 16, 16, null);
 		BufferedImage image = new BufferedImage(16, 16, BufferedImage.TYPE_INT_ARGB);
 		image.createGraphics().drawImage(img.getScaledInstance(16, 16, Image.SCALE_DEFAULT), 0, 0, null);
 		
@@ -108,43 +101,12 @@ public final class ChunkRenderer {
 		if (parent != null) render(parent);
 	}
 	
-	private static Image getImage(MapChunk chunk) {
-		Image image = getChunkRender(chunk);
-		return image != null ? image : new BufferedImage(16, 16, BufferedImage.TYPE_INT_ARGB);
-	}
-	
-	public static void render(MapChunk chunk) {
-		synchronized(mapChunksToRender) {
-			mapChunksToRender.get(chunk.size).add(chunk);
-		}
-	}
-	
-	public static Image getChunkRender(MapChunk chunk) {
-		try {
-			Image image = null;
-	    	synchronized(chunkCache) {
-	    		MapCache mapCache = new MapCache(chunk, null);
-    			if (chunkCache.contains(mapCache)) image = chunkCache.get(chunkCache.indexOf(mapCache)).get();
-    			if (image == null) {
-    				image = ImageIO.read(new File(chunk.world.getWorldFolder().getPath() + "/dynamicmap/" + chunk.size + "/" + chunk.x + "_" + chunk.z + ".png"));
-    				chunkCache.remove(mapCache);
-    				chunkCache.add(new MapCache(chunk, image));
-    			}
-	    	}
-			return image;
-		} catch (Exception e) {
-			return null;
-		}
-	}
-	
-	private static void save(MapChunk chunk, BufferedImage image) {
-	    synchronized(chunkCache) {
-	    	MapCache mapCache = new MapCache(chunk, image);
-    		chunkCache.remove(mapCache);
-    		chunkCache.add(mapCache);
+	private static void save(MapChunk mapChunk, BufferedImage image) {
+	    synchronized(cache) {
+	    	cache.put(mapChunk, new SoftReference<Image>(image));
 	    }
 		try {
-			File file = new File(chunk.world.getWorldFolder().getPath() + "/dynamicmap/" + chunk.size + "/" + chunk.x + "_" + chunk.z + ".png");
+			File file = new File(mapChunk.world.getWorldFolder().getPath() + "/dynamicmap/" + mapChunk.size + "/" + mapChunk.x + "_" + mapChunk.z + ".png");
 			file.setReadable(true);
 			file.setWritable(true);
 			if (!file.isFile()) {
@@ -158,27 +120,28 @@ public final class ChunkRenderer {
 		}
 	}
 	
-}
-
-class MapCache extends SoftReference<Image> {
-	
-	public MapChunk mapChunk;
-
-	public MapCache(MapChunk mapChunk, Image image) {
-		super(image);
-		this.mapChunk = mapChunk;
+	public static void render(MapChunk chunk) {
+		synchronized(toRender) {
+			toRender.get(chunk.size).add(chunk);
+		}
 	}
 	
-	@Override
-	public boolean equals(Object object) {
-		return object != null && object instanceof MapCache && mapChunk.equals(((MapCache) object).mapChunk);
-	}
-	
-	@Override
-	public int hashCode() {
-		int hash = 1;
-		hash *= 3 + mapChunk.hashCode();
-		return hash;
+	public static Image getChunkRender(MapChunk mapChunk) {
+		Image image = null;
+		try {
+	    	synchronized(cache) {
+    			if (cache.containsKey(mapChunk)) image = cache.get(mapChunk).get();
+    			if (image == null) {
+    				image = ImageIO.read(new File(mapChunk.world.getWorldFolder().getPath() + "/dynamicmap/" + mapChunk.size + "/" + mapChunk.x + "_" + mapChunk.z + ".png"));
+    				cache.put(mapChunk, new SoftReference<Image>(image));
+    			}
+	    	}
+		} catch (Exception e) {}
+		if (image == null) {
+			image = new BufferedImage(16, 16, BufferedImage.TYPE_INT_ARGB);
+			image.getGraphics().setColor(new Color(0, 0, 0, 0));
+		}
+		return image;
 	}
 	
 }
