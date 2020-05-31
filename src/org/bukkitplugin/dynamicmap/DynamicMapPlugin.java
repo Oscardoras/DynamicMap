@@ -48,6 +48,7 @@ public class DynamicMapPlugin extends BukkitPlugin implements Listener {
 	public MapView map;
 	public Map<Player, Location> locations = new HashMap<Player, Location>();
 	
+	@Override
 	public void onEnable() {
 		if (!getConfig().contains("ticks_per_rendering")) {
 			getConfig().set("ticks_per_rendering", 100);
