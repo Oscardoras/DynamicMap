@@ -50,10 +50,7 @@ public class DynamicMapPlugin extends BukkitPlugin implements Listener {
 	
 	@Override
 	public void onEnable() {
-		if (!getConfig().contains("ticks_per_rendering")) {
-			getConfig().set("ticks_per_rendering", 100);
-			saveConfig();
-		}
+		this.saveDefaultConfig();
 		
 		int ticks = getConfig().getInt("ticks_per_rendering");
 		new Thread(() -> {
@@ -71,7 +68,8 @@ public class DynamicMapPlugin extends BukkitPlugin implements Listener {
 		
 		for (World world : Bukkit.getWorlds())
 			for (Chunk chunk : world.getLoadedChunks())
-				if (!new File(chunk.getWorld().getWorldFolder().getPath() + "/dynamicmap/1/" + chunk.getX() + "_" + chunk.getZ() + ".png").exists()) ChunkRenderer.render(new MapChunk(chunk));
+				if (!new File(chunk.getWorld().getWorldFolder().getPath() + "/dynamicmap/1/" + chunk.getX() + "_" + chunk.getZ() + ".png").exists())
+					ChunkRenderer.render(new MapChunk(chunk));
 		
 		
 		ConfigurationFile config = new ConfigurationFile(Bukkit.getWorlds().get(0).getWorldFolder().getPath() + "/data/dynamicmap.yml");
@@ -262,7 +260,8 @@ public class DynamicMapPlugin extends BukkitPlugin implements Listener {
 	@EventHandler
 	public void onLoad(ChunkLoadEvent e) {
 		Chunk chunk = e.getChunk();
-		if (!new File(chunk.getWorld().getWorldFolder().getPath() + "/dynamicmap/1/" + chunk.getX() + "_" + chunk.getZ() + ".png").exists()) ChunkRenderer.render(new MapChunk(chunk));
+		if (!new File(chunk.getWorld().getWorldFolder().getPath() + "/dynamicmap/1/" + chunk.getX() + "_" + chunk.getZ() + ".png").exists())
+			ChunkRenderer.render(new MapChunk(chunk));
 	}
 	
 	@EventHandler

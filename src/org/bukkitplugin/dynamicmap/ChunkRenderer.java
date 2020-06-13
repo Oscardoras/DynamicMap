@@ -8,10 +8,9 @@ import java.io.File;
 import java.io.IOException;
 import java.lang.ref.SoftReference;
 import java.util.HashMap;
-import java.util.HashSet;
-import java.util.Iterator;
 import java.util.Map;
-import java.util.Set;
+import java.util.Queue;
+import java.util.concurrent.ConcurrentLinkedQueue;
 
 import javax.imageio.ImageIO;
 
@@ -21,34 +20,27 @@ import org.bukkit.block.Block;
 
 public final class ChunkRenderer {
 	
-	private static final Map<Integer, Set<MapChunk>> toRender = new HashMap<Integer, Set<MapChunk>>();
+	private static final Map<Integer, Queue<MapChunk>> toRender = new HashMap<Integer, Queue<MapChunk>>();
 	private static final Map<MapChunk, SoftReference<Image>> cache = new HashMap<MapChunk, SoftReference<Image>>();
 	public static final Map<String, Color> colorCache = new HashMap<String, Color>();
 	
 	static {
-		toRender.put(1, new HashSet<MapChunk>());
-		toRender.put(2, new HashSet<MapChunk>());
-		toRender.put(4, new HashSet<MapChunk>());
-		toRender.put(8, new HashSet<MapChunk>());
-		toRender.put(16, new HashSet<MapChunk>());
+		toRender.put(1, new ConcurrentLinkedQueue<MapChunk>());
+		toRender.put(2, new ConcurrentLinkedQueue<MapChunk>());
+		toRender.put(4, new ConcurrentLinkedQueue<MapChunk>());
+		toRender.put(8, new ConcurrentLinkedQueue<MapChunk>());
+		toRender.put(16, new ConcurrentLinkedQueue<MapChunk>());
 	}
 	
 	public static void run() {
 		for (int size : new Integer[] {1, 2, 4, 8, 16}) {
-			MapChunk chunk = null;
-			synchronized(toRender) {
-				Set<MapChunk> mapChunks = toRender.get(size);
-				Iterator<MapChunk> it = mapChunks.iterator();
-				if (it.hasNext()) {
-					chunk = it.next();
-					it.remove();
-				}
-			}
+			Queue<MapChunk> mapChunks = toRender.get(size);
+			MapChunk chunk = mapChunks.peek();
 			if (chunk != null) {
 				if (size == 1) renderChunk(chunk);
 				else renderOver(chunk);
-				break;
 			}
+			mapChunks.poll();
 		}
 	}
 	
@@ -121,9 +113,7 @@ public final class ChunkRenderer {
 	}
 	
 	public static void render(MapChunk chunk) {
-		synchronized(toRender) {
-			toRender.get(chunk.size).add(chunk);
-		}
+		toRender.get(chunk.size).offer(chunk);
 	}
 	
 	public static Image getChunkRender(MapChunk mapChunk) {
