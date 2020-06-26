@@ -1,4 +1,4 @@
-package org.bukkitplugin.dynamicmap;
+package me.oscardoras.dynamicmap;
 
 import java.awt.Color;
 import java.awt.Graphics2D;

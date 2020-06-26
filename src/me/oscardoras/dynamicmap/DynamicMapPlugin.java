@@ -1,11 +1,10 @@
-package org.bukkitplugin.dynamicmap;
+package me.oscardoras.dynamicmap;
 
 import java.awt.Color;
 import java.awt.image.BufferedImage;
 import java.io.File;
 import java.io.IOException;
 import java.util.HashMap;
-import java.util.Iterator;
 import java.util.Map;
 
 import javax.imageio.ImageIO;
@@ -28,13 +27,13 @@ import org.bukkit.event.block.BlockPlaceEvent;
 import org.bukkit.event.player.PlayerInteractEvent;
 import org.bukkit.event.world.ChunkLoadEvent;
 import org.bukkit.inventory.ItemStack;
-import org.bukkit.inventory.Recipe;
 import org.bukkit.inventory.ShapedRecipe;
 import org.bukkit.inventory.meta.ItemMeta;
 import org.bukkit.inventory.meta.MapMeta;
 import org.bukkit.map.MapView;
-import org.bukkitutils.BukkitPlugin;
-import org.bukkitutils.io.ConfigurationFile;
+
+import me.oscardoras.spigotutils.BukkitPlugin;
+import me.oscardoras.spigotutils.io.ConfigurationFile;
 
 public class DynamicMapPlugin extends BukkitPlugin implements Listener {
 	
@@ -83,23 +82,15 @@ public class DynamicMapPlugin extends BukkitPlugin implements Listener {
 		map.setWorld(Bukkit.getWorlds().get(0));
 		
 		
-		Bukkit.getScheduler().scheduleSyncRepeatingTask(this, () -> {
-			Iterator<Recipe> recipes = Bukkit.recipeIterator();
-			while (recipes.hasNext()) {
-				ItemStack item = recipes.next().getResult();
-				if (item.getType() == Material.FILLED_MAP && ((MapMeta) item.getItemMeta()).getMapView().equals(map)) return;
-			}
-			ItemStack result = new ItemStack(Material.FILLED_MAP);
-			MapMeta meta = (MapMeta) result.getItemMeta();
-			meta.setMapView(map);
-			result.setItemMeta(meta);
-			
-			ShapedRecipe recipe = new ShapedRecipe(new NamespacedKey(this, "dynamicmap"), result);
-			recipe.shape("XXX", "X#X", "XXX");
-			recipe.setIngredient('X', Material.PAPER);
-			recipe.setIngredient('#', Material.ENDER_EYE);
-			Bukkit.addRecipe(recipe);
-		}, 0L, 20L);
+		ItemStack result = new ItemStack(Material.FILLED_MAP);
+		MapMeta meta = (MapMeta) result.getItemMeta();
+		meta.setMapView(map);
+		result.setItemMeta(meta);
+		ShapedRecipe recipe = new ShapedRecipe(new NamespacedKey(this, "dynamicmap"), result);
+		recipe.shape("XXX", "X#X", "XXX");
+		recipe.setIngredient('X', Material.PAPER);
+		recipe.setIngredient('#', Material.ENDER_EYE);
+		Bukkit.addRecipe(recipe);
 		
 		
 		Bukkit.getPluginManager().registerEvents(this, this);

@@ -1,4 +1,4 @@
-package org.bukkitplugin.dynamicmap;
+package me.oscardoras.dynamicmap;
 
 import org.bukkit.Location;
 
